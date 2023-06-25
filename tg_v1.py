@@ -11,15 +11,14 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from time import sleep
-from sys import platform
 from os import path
 from platform import system
 
 #URL list
 url_file = "urls.txt"
 workDir = path.dirname(path.abspath(__file__))
-drv_exec = '/chromedriiver' if system() == 'Linux' else '/chromedriver.exe' 
-workDir = workDir+drv_exec
+drv_exec = '/chromedriiver' if system() == 'Linux' else '\chromedriver.exe' 
+drv_exec = workDir + drv_exec
 
 def get_urls(u_file):
     with open(u_file, 'r') as f:
@@ -50,7 +49,7 @@ def get_links_from_page(url, n=1, with_download=False):
 
 def browser(url):
     options = Options()
-    service = Service(executable_path = './chromedriver')
+    service = Service(executable_path = drv_exec)
     options.add_argument('--headless=new')
     driver = webdriver.Chrome(service=service, options=options)
     try:
@@ -59,7 +58,6 @@ def browser(url):
         #sleep(2)
     except BaseException as error:
         print(f'Error when accessng {url}')
-        print(error)
     finally:
         driver.close()
     
