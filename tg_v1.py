@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jun 24 11:36:28 2023
-Traffic Generator
+Web Traffic Generator
 @author: Dimka
 """
 import requests
@@ -10,18 +10,26 @@ from bs4 import BeautifulSoup as bs4
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from time import sleep
 from os import path
 from platform import system
+from datetime import datetime
 
 #URL list
-url_file = "urls.txt"
 workDir = path.dirname(path.abspath(__file__))
-drv_exec = '/chromedriiver' if system() == 'Linux' else '\chromedriver.exe' 
-drv_exec = workDir + drv_exec
+drvExec = f'{workDir}/chromedriver' if system() == 'Linux' else f'{workDir}\chromedriver.exe' 
+urlFile = f'{workDir}/urls.txt'
+logFile = f'{workDir}/tg.log'
 
-def get_urls(u_file):
-    with open(u_file, 'r') as f:
+
+def logging(log_text):
+    time = datetime.today().strftime('%d.%m.%Y %H:%M')
+    with open(logFile, 'a') as f:
+        f.write(f'{time}\t{log_text}\n')
+
+
+def get_urls_from_file(uf=urlFile):
+    logging(f'Starting new round...\n')
+    with open(uf, 'r') as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
 
@@ -36,26 +44,23 @@ def get_links_from_page(url, n=1, with_download=False):
         rand_urls = []
         count = 0
         while count < n:
-            rand_num = randint(0,len(hrefs))
+            rand_num = randint(0,len(hrefs)-1)
             rand_href = hrefs[rand_num]
-            if 'https' in rand_href:
+            if 'http' in rand_href:
                 rand_urls.append(rand_href)
                 count += 1
-        if n == 1:
-            return rand_urls[0]
-        else:
-            return rand_urls
+                logging(rand_href)
+        return rand_urls
 
 
 def browser(url):
     options = Options()
-    service = Service(executable_path = drv_exec)
+    service = Service(executable_path = drvExec)
     options.add_argument('--headless=new')
     driver = webdriver.Chrome(service=service, options=options)
     try:
         driver.get(url)
         print(driver.current_url, driver.title)
-        #sleep(2)
     except BaseException as error:
         print(f'Error when accessng {url}')
     finally:
@@ -65,12 +70,12 @@ def browser(url):
     
     
 def main():
-    urls = get_urls(url_file)
+    urls = get_urls_from_file()
     for url in urls:
-        rand_urls = get_links_from_page(url,2)
-        for url in rand_urls:
-            browser(url)
-        
+        links = get_links_from_page(url,2)
+        for link in links:
+            browser(link)
+    logging('Finished ....') 
 
         
   
