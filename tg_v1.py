@@ -13,7 +13,8 @@ from selenium.webdriver.chrome.service import Service
 from os import path
 from platform import system
 from datetime import datetime
-import re
+import subprocess
+
 
 #URL list
 workDir = path.dirname(path.abspath(__file__))
@@ -57,6 +58,12 @@ def get_links_from_page(url, n=1, with_download=False):
         return rand_urls
 
 
+def get_default_gw():
+    p = subprocess.Popen(['ip', 'route'], stdout = subprocess.PIPE) 
+    output = str(p.communicate()) 
+    return output
+
+
 def browser(url):
     options = Options()
     service = Service(executable_path = drvExec)
@@ -70,26 +77,6 @@ def browser(url):
     finally:
         driver.close()
 
-'''    
-def is_downloadable(url):
-    h = requests.head(url, allow_redirects=True)
-    header = h.headers
-    content_type = header.get('content-type')
-    if 'text' in content_type.lower():
-        return False
-    if 'html' in content_type.lower():
-        return False
-    return True 
-
-
-def get_filename_from_url(content):
-    if not content:
-        return None
-    fname = re.findall('filename=(.+)', content)
-    if len(fname) == 0:
-        return None
-    return fname[0]
-'''
     
 def main():
     '''
@@ -99,7 +86,7 @@ def main():
         for link in links:
             browser(link)
     logging('Finished ....\n') 
-    '''
+
     urls = get_urls_from_file(urlFile2)
     for url in urls:
         r = requests.get(url, allow_redirects=True)
@@ -110,6 +97,9 @@ def main():
                 f.write(r.content)
         except AttributeError:
             print('[-] Ошибка сохранения файла...')
+    '''
+    print(get_default_gw())
+    
             
             
             
