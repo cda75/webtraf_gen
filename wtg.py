@@ -96,7 +96,7 @@ def main():
         for link in links:
             browser(link)
 
-    logging('Starting virus checking section')
+    logging('\nStarting virus checking section')
     urls = get_urls_from_file(urlFile2)
     for url in urls:
         try:
