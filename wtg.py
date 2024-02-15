@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Jun 24 11:36:28 2023
-Web Traffic Generator
-@author: Dimka
-"""
+
 import requests, ssl
 from random import randint
 from bs4 import BeautifulSoup as bs4
@@ -14,18 +10,18 @@ from os import path
 from platform import system
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
-
+from cgw import get_default_gw 
+import chromedriver_autoinstaller as chromedriver
 
 requests.packages.urllib3.disable_warnings()
 
-
 #URL list
 workDir = path.dirname(path.abspath(__file__))
-drvExec = f'{workDir}//drv/chromedriver' if system() == 'Linux' else f'{workDir}\drv\chromedriver.exe' 
+#drvExec = f'{workDir}//drv/chromedriver' if system() == 'Linux' else f'{workDir}\drv\chromedriver.exe' 
+certDir = f'{workDir}/certs/'
 urlFile = f'{workDir}/url/web_urls.txt'
 logFile = f'{workDir}/logs/access.log'
 urlFile2 = f'{workDir}/url/virus_urls.txt'
-
 
 def logging(log_text, title=False):
     time = datetime.today().strftime('%d.%m.%Y %H:%M')
@@ -53,7 +49,7 @@ def get_links_from_page(url, n=1, with_download=False):
     headers = {'User-Agent': 
                'Mozilla/5.0 Chrome/90.0.4430.85'}
     try:
-        r = requests.get(url, headers=headers, verify=False)
+        r = requests.get(url, headers=headers, verify=f'{workDir}/certs')
         html = r.text
         if (r.status_code != 200) or (len(html) == 0):
             logging(f'[{r.status_code}] Error during connection to {url}')
@@ -74,33 +70,46 @@ def get_links_from_page(url, n=1, with_download=False):
         return []
 
 
-def browser(url):
-    options = Options()
-    service = Service(executable_path = drvExec)
-    options.add_argument('--headless=new')
-    driver = webdriver.Chrome(service=service, options=options)
+def browser(driver, url):
     try:
         logging(f'Browsing {url}')
         driver.get(url)
     except BaseException:
         logging(f'[-] Error when accessng {url}')
-    finally:
-        driver.close()
 
     
 def main():
-    
+    chromedriver.install()
+    options = Options()
+    proxy = {}
+    options.add_argument('--headless=new')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--allow-running-insecure-content')
+    options.add_argument('--ignore-certificate-errors')
+    if get_default_gw() == '10.10.100.252':
+        options.add_argument('--proxy-server=10.10.0.8:8090')
+        proxy = {'http': '10.10.0.8:8090', 'https': '10.10.0.8:8090'}
+        print('Using UserGate as a proxy-server')
+    drv = webdriver.Chrome(options=options)
+ 
     urls = get_urls_from_file()
     for url in urls:
-        links = get_links_from_page(url,4)
+        links = get_links_from_page(url, 7)
         for link in links:
-            browser(link)
+            browser(drv, link)
+    drv.close()
 
+    if get_default_gw() == '10.10.100.252':
+        proxy = {'http': '10.10.0.8:8090', 'https': '10.10.0.8:8090'}
+    else:
+        proxy = {}
     logging('\nStarting virus checking section')
     urls = get_urls_from_file(urlFile2)
     for url in urls:
         try:
-            r = requests.get(url, allow_redirects=True)
+            r = requests.get(url, allow_redirects=True, proxies=proxy, verify=f'{workDir}/certs')
             f_name = url[:5]
             try:
                 with open(f'{workDir}/tmp/{f_name}', 'wb') as f:
